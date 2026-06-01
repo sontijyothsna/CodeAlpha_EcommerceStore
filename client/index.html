@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Title Here</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Add this line -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Your CSS - Keep this line -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🛍️ E-<span>Shop</span></div>
+        <div>
+            <a href="index.html">Home</a>
+            <a href="cart.html">Cart (<span id="cart-count">0</span>)</a>
+            <a href="orders.html">My Orders</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Our Products</h1>
+        <div id="products-container" class="products-grid">
+            <p>Loading products...</p>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 E-Shop | Developed for <strong>CodeAlpha</strong> Internship</p>
+    </footer>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+        // Add this at the beginning of loadProducts function
+const savedCount = localStorage.getItem('cartCount');
+if (savedCount && document.getElementById('cart-count')) {
+    document.getElementById('cart-count').innerText = savedCount;
+}
+        async function loadProducts() {
+            try {
+                const response = await fetch(`${API_URL}/products`);
+                const products = await response.json();
+                
+                const container = document.getElementById('products-container');
+                if (products.length === 0) {
+                    container.innerHTML = '<p>No products yet. Add products using POSTMAN!</p>';
+                    return;
+                }
+                
+                container.innerHTML = products.map(product => `
+                    <div class="product-card">
+                        <img src="${product.image || 'https://via.placeholder.com/300'}" alt="${product.name}" class="product-image">
+                        <div class="product-info">
+                            <h3 class="product-title">${product.name}</h3>
+                            <p>${product.description ? product.description.substring(0, 80) + '...' : ''}</p>
+                            <p class="product-price">$${product.price}</p>
+                            <button class="btn btn-primary" onclick="addToCart('${product._id}')">Add to Cart</button>
+                            <button class="btn" onclick="viewProduct('${product._id}')">View Details</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                loadCartCount();
+            } catch (error) {
+                document.getElementById('products-container').innerHTML = '<p>Error loading products. Make sure server is running.</p>';
+            }
+        }
+
+        async function addToCart(productId) {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/cart`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ productId, quantity: 1 })
+                });
+                
+                if (response.ok) {
+                    alert('Added to cart!');
+                    loadCartCount();
+                } else {
+                    alert('Failed to add to cart');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadCartCount() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+        const response = await fetch(`${API_URL}/cart`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const cart = await response.json();
+        const count = cart.items ? cart.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
+        const countElement = document.getElementById('cart-count');
+        if (countElement) countElement.innerText = count;
+        localStorage.setItem('cartCount', count);
+    } catch (error) {
+        // Fallback to localStorage
+        const savedCount = localStorage.getItem('cartCount');
+        if (savedCount && document.getElementById('cart-count')) {
+            document.getElementById('cart-count').innerText = savedCount;
+        }
+    }
+}
+
+        function viewProduct(productId) {
+            window.location.href = `product.html?id=${productId}`;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        loadProducts();
+    </script>
+</body>
+</html>

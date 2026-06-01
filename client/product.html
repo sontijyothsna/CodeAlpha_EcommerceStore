@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details | E-Shop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🛍️ E-<span>Shop</span></div>
+        <div>
+            <a href="index.html">Home</a>
+            <a href="cart.html">Cart (<span id="cart-count">0</span>)</a>
+            <a href="orders.html">My Orders</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="product-details">
+            <div class="loading">Loading product details...</div>
+        </div>
+        
+        <!-- Related Products Section -->
+        <div id="related-products" style="margin-top: 3rem;">
+            <h2 style="text-align: center; color: white; margin-bottom: 1.5rem;">You May Also Like</h2>
+            <div id="related-container" class="products-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+                Loading recommendations...
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 E-Shop | Developed for <strong>CodeAlpha</strong> Internship</p>
+    </footer>
+
+    <style>
+        .product-detail-enhanced {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        .product-detail-image {
+            flex: 1;
+            min-width: 300px;
+            background: #f5f7fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .product-detail-image img {
+            max-width: 100%;
+            border-radius: 16px;
+        }
+        
+        .product-detail-info {
+            flex: 1;
+            padding: 2rem;
+        }
+        
+        .product-detail-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #1a1a2e;
+        }
+        
+        .product-detail-price {
+            font-size: 2rem;
+            color: #e94560;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        
+        .product-detail-description {
+            color: #555;
+            line-height: 1.6;
+            margin: 1rem 0;
+        }
+        
+        .product-specs {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+        }
+        
+        .product-specs h4 {
+            margin-bottom: 0.5rem;
+            color: #1a1a2e;
+        }
+        
+        .product-specs ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .product-specs li {
+            padding: 0.3rem 0;
+            color: #555;
+        }
+        
+        .product-specs li strong {
+            color: #1a1a2e;
+            width: 120px;
+            display: inline-block;
+        }
+        
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .quantity-selector label {
+            font-weight: 500;
+        }
+        
+        .quantity-selector input {
+            width: 80px;
+            padding: 0.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn-large {
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .product-detail-enhanced {
+                flex-direction: column;
+            }
+        }
+    </style>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+
+        async function loadProduct() {
+            try {
+                const response = await fetch(`${API_URL}/products/${productId}`);
+                const product = await response.json();
+                
+                // Generate product specifications based on product name
+                const specs = generateSpecs(product.name);
+                
+                document.getElementById('product-details').innerHTML = `
+                    <div class="product-detail-enhanced">
+                        <div class="product-detail-image">
+                            <img src="${product.image || 'https://via.placeholder.com/400'}" alt="${product.name}">
+                        </div>
+                        <div class="product-detail-info">
+                            <h1 class="product-detail-title">${product.name}</h1>
+                            <div class="product-detail-price">$${product.price.toFixed(2)}</div>
+                            <p class="product-detail-description">${product.description || 'No description available. This product is high-quality and comes with manufacturer warranty.'}</p>
+                            
+                            <div class="product-specs">
+                                <h4>📋 Product Specifications</h4>
+                                <ul>
+                                    ${specs.map(spec => `<li><strong>${spec.label}:</strong> ${spec.value}</li>`).join('')}
+                                    <li><strong>Warranty:</strong> 1 Year Manufacturer Warranty</li>
+                                    <li><strong>Condition:</strong> Brand New</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="quantity-selector">
+                                <label>Quantity:</label>
+                                <input type="number" id="quantity" value="1" min="1" max="99">
+                            </div>
+                            
+                            <div class="action-buttons">
+                                <button class="btn btn-primary btn-large" onclick="addToCart()">🛒 Add to Cart</button>
+                                <button class="btn btn-large" onclick="buyNow()">⚡ Buy Now</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                loadCartCount();
+                loadRelatedProducts(product.name);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('product-details').innerHTML = '<div class="loading">Product not found</div>';
+            }
+        }
+
+        function generateSpecs(productName) {
+            // Dynamic specs based on product type
+            const specs = [];
+            
+            if (productName.toLowerCase().includes('laptop')) {
+                specs.push({ label: 'Processor', value: 'Intel Core i7-13700H' });
+                specs.push({ label: 'RAM', value: '16GB DDR5' });
+                specs.push({ label: 'Storage', value: '1TB SSD' });
+                specs.push({ label: 'Graphics', value: 'NVIDIA RTX 4060' });
+                specs.push({ label: 'Display', value: '15.6" FHD 144Hz' });
+            } 
+            else if (productName.toLowerCase().includes('headphone')) {
+                specs.push({ label: 'Type', value: 'Over-Ear Wireless' });
+                specs.push({ label: 'Battery Life', value: '30 hours' });
+                specs.push({ label: 'Noise Cancellation', value: 'Active ANC' });
+                specs.push({ label: 'Connectivity', value: 'Bluetooth 5.2' });
+            }
+            else if (productName.toLowerCase().includes('camera')) {
+                specs.push({ label: 'Sensor', value: '24.2MP Full-Frame' });
+                specs.push({ label: 'Video', value: '4K 60fps' });
+                specs.push({ label: 'Lens Mount', value: 'Sony E-mount' });
+                specs.push({ label: 'ISO Range', value: '100-51200' });
+            }
+            else if (productName.toLowerCase().includes('speaker')) {
+                specs.push({ label: 'Power', value: '20W RMS' });
+                specs.push({ label: 'Battery', value: '12 hours' });
+                specs.push({ label: 'Waterproof', value: 'IPX7' });
+                specs.push({ label: 'Connectivity', value: 'Bluetooth 5.0' });
+            }
+            else if (productName.toLowerCase().includes('iphone')) {
+                specs.push({ label: 'Display', value: '6.1" Super Retina XDR' });
+                specs.push({ label: 'Processor', value: 'A16 Bionic' });
+                specs.push({ label: 'Camera', value: '48MP + 12MP' });
+                specs.push({ label: 'Battery', value: 'Up to 20 hours video playback' });
+            }
+            else {
+                specs.push({ label: 'Brand', value: 'Premium' });
+                specs.push({ label: 'Quality', value: 'High Grade' });
+                specs.push({ label: 'Origin', value: 'Imported' });
+            }
+            
+            return specs;
+        }
+
+        async function loadRelatedProducts(currentProductName) {
+            try {
+                const response = await fetch(`${API_URL}/products`);
+                const allProducts = await response.json();
+                
+                // Filter out current product and get 3 random products
+                const otherProducts = allProducts.filter(p => p._id !== productId);
+                const related = otherProducts.slice(0, 3);
+                
+                const container = document.getElementById('related-container');
+                
+                if (related.length === 0) {
+                    container.innerHTML = '<p style="color: white; text-align: center;">No related products found</p>';
+                    return;
+                }
+                
+                container.innerHTML = related.map(product => `
+                    <div class="product-card" style="cursor: pointer;" onclick="viewProduct('${product._id}')">
+                        <img src="${product.image || 'https://via.placeholder.com/200'}" alt="${product.name}" class="product-image">
+                        <div class="product-info">
+                            <h3 class="product-title">${product.name}</h3>
+                            <p class="product-price">$${product.price}</p>
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); addToCartById('${product._id}')">Add to Cart</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading related:', error);
+            }
+        }
+
+        async function addToCart() {
+            const quantity = parseInt(document.getElementById('quantity').value);
+            addToCartById(productId, quantity);
+        }
+
+        async function addToCartById(productId, quantity = 1) {
+            try {
+                const response = await fetch(`${API_URL}/cart`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ productId, quantity })
+                });
+                
+                if (response.ok) {
+                    alert('Added to cart!');
+                    loadCartCount();
+                } else {
+                    alert('Failed to add to cart');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function buyNow() {
+            const quantity = parseInt(document.getElementById('quantity').value);
+            addToCartById(productId, quantity);
+            setTimeout(() => {
+                window.location.href = 'checkout.html';
+            }, 500);
+        }
+
+        function viewProduct(id) {
+            window.location.href = `product.html?id=${id}`;
+        }
+
+        async function loadCartCount() {
+            try {
+                const response = await fetch(`${API_URL}/cart`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const cart = await response.json();
+                const count = cart.items ? cart.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
+                document.getElementById('cart-count').innerText = count;
+            } catch (error) {}
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+
+        loadProduct();
+    </script>
+</body>
+</html>

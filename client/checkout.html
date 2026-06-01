@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Title Here</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Add this line -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Your CSS - Keep this line -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🛍️ E-<span>Shop</span></div>
+        <div>
+            <a href="index.html">Home</a>
+            <a href="cart.html">Cart (<span id="cart-count">0</span>)</a>
+            <a href="orders.html">My Orders</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Checkout</h1>
+        <div class="checkout-form">
+            <div class="form-group">
+                <label>Street Address</label>
+                <input type="text" id="street" required>
+            </div>
+            <div class="form-group">
+                <label>City</label>
+                <input type="text" id="city" required>
+            </div>
+            <div class="form-group">
+                <label>State</label>
+                <input type="text" id="state" required>
+            </div>
+            <div class="form-group">
+                <label>Zip Code</label>
+                <input type="text" id="zip" required>
+            </div>
+            <div class="form-group">
+                <label>Country</label>
+                <input type="text" id="country" value="USA" required>
+            </div>
+            <div class="form-group">
+                <label>Payment Method</label>
+                <select id="payment">
+                    <option>Credit Card</option>
+                    <option>PayPal</option>
+                    <option>Cash on Delivery</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="placeOrder()" style="width:100%">Place Order</button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 E-Shop | Developed for <strong>CodeAlpha</strong> Internship</p>
+    </footer>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        async function placeOrder() {
+            const orderData = {
+                shippingAddress: {
+                    street: document.getElementById('street').value,
+                    city: document.getElementById('city').value,
+                    state: document.getElementById('state').value,
+                    zipCode: document.getElementById('zip').value,
+                    country: document.getElementById('country').value
+                },
+                paymentMethod: document.getElementById('payment').value
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('Order placed successfully!');
+                    window.location.href = 'orders.html';
+                } else {
+                    alert(data.message || 'Order failed');
+                }
+            } catch (error) {
+                alert('Error placing order');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>
