@@ -35,6 +35,15 @@
     <script>
         const API_URL = 'http://localhost:5000/api';
 
+        function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        const icon = type === 'success' ? '✓' : '✗';
+        toast.innerHTML = `${icon} ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
         const token = localStorage.getItem('token');
         if (!token) {
             window.location.href = 'login.html';
@@ -87,13 +96,14 @@ if (savedCount && document.getElementById('cart-count')) {
                 });
                 
                 if (response.ok) {
-                    alert('Added to cart!');
+                    showToast('Added to cart!','sucess');
                     loadCartCount();
                 } else {
-                    alert('Failed to add to cart');
+                    showToast('Failed to add to cart','errorS');
                 }
             } catch (error) {
                 console.error('Error:', error);
+                showToast('Error adding to cart','errorS')
             }
         }
 

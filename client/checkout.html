@@ -61,52 +61,77 @@
     </footer>
 
     <script>
-        const API_URL = 'http://localhost:5000/api';
-        const token = localStorage.getItem('token');
+    const API_URL = 'http://localhost:5000/api';
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        window.location.href = 'login.html';
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        const icon = type === 'success' ? '✓' : '✗';
+        toast.innerHTML = `${icon} ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function placeOrder() {
+        // Validate required fields
+        const street = document.getElementById('street').value;
+        const city = document.getElementById('city').value;
+        const state = document.getElementById('state').value;
+        const zipCode = document.getElementById('zip').value;
         
-        if (!token) {
-            window.location.href = 'login.html';
+        if (!street || !city || !state || !zipCode) {
+            showToast('Please fill all address fields', 'error');
+            return;
         }
-
-        async function placeOrder() {
-            const orderData = {
-                shippingAddress: {
-                    street: document.getElementById('street').value,
-                    city: document.getElementById('city').value,
-                    state: document.getElementById('state').value,
-                    zipCode: document.getElementById('zip').value,
-                    country: document.getElementById('country').value
+        
+        const orderData = {
+            shippingAddress: {
+                street: street,
+                city: city,
+                state: state,
+                zipCode: zipCode,
+                country: document.getElementById('country').value
+            },
+            paymentMethod: document.getElementById('payment').value
+        };
+        
+        try {
+            const response = await fetch(`${API_URL}/orders`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
-                paymentMethod: document.getElementById('payment').value
-            };
+                body: JSON.stringify(orderData)
+            });
             
-            try {
-                const response = await fetch(`${API_URL}/orders`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(orderData)
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    alert('Order placed successfully!');
+            const data = await response.json();
+            
+            if (response.ok) {
+                showToast('Order placed successfully! 🎉', 'success');
+                setTimeout(() => {
                     window.location.href = 'orders.html';
-                } else {
-                    alert(data.message || 'Order failed');
-                }
-            } catch (error) {
-                alert('Error placing order');
+                }, 1500);
+            } else {
+                showToast(data.message || 'Order failed', 'error');
             }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error placing order', 'error');
         }
+    }
 
-        function logout() {
-            localStorage.removeItem('token');
-            window.location.href = 'login.html';
-        }
-    </script>
+    function logout() {
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    }
+</script>
+
 </body>
 </html>

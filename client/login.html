@@ -48,77 +48,89 @@
     </footer>
 
     <script>
-        const API_URL = 'http://localhost:5000/api';
+    const API_URL = 'http://localhost:5000/api';
 
-        function showTab(tab) {
-            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        const icon = type === 'success' ? '✓' : '✗';
+        toast.innerHTML = `${icon} ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    function showTab(tab) {
+        document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        
+        if (tab === 'login') {
+            document.getElementById('login-form').classList.add('active');
+            document.querySelector('.tab-btn').classList.add('active');
+        } else {
+            document.getElementById('register-form').classList.add('active');
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        }
+    }
+
+    async function register(event) {
+        event.preventDefault();
+        const name = document.getElementById('reg-name').value;
+        const email = document.getElementById('reg-email').value;
+        const password = document.getElementById('reg-password').value;
+        
+        try {
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
             
-            if (tab === 'login') {
-                document.getElementById('login-form').classList.add('active');
-                document.querySelector('.tab-btn').classList.add('active');
+            const data = await response.json();
+            if (response.ok) {
+                showToast('Registration successful! Please login.', 'success');
+                setTimeout(() => showTab('login'), 1500);
+                document.getElementById('register-message').innerText = '';
             } else {
-                document.getElementById('register-form').classList.add('active');
-                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                showToast(data.message, 'error');
             }
+        } catch (error) {
+            showToast('Error connecting to server', 'error');
         }
+    }
 
-        async function register(event) {
-            event.preventDefault();
-            const name = document.getElementById('reg-name').value;
-            const email = document.getElementById('reg-email').value;
-            const password = document.getElementById('reg-password').value;
+    async function login(event) {
+        event.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        
+        try {
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
             
-            try {
-                const response = await fetch(`${API_URL}/auth/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, password })
-                });
-                
-                const data = await response.json();
-                if (response.ok) {
-                    document.getElementById('register-message').style.color = 'green';
-                    document.getElementById('register-message').innerText = 'Registration successful! Please login.';
-                    setTimeout(() => showTab('login'), 2000);
-                } else {
-                    document.getElementById('register-message').style.color = 'red';
-                    document.getElementById('register-message').innerText = data.message;
-                }
-            } catch (error) {
-                document.getElementById('register-message').innerText = 'Error connecting to server';
-            }
-        }
-
-        async function login(event) {
-            event.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            
-            try {
-                const response = await fetch(`${API_URL}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                
-                const data = await response.json();
-                if (response.ok) {
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
+            const data = await response.json();
+            if (response.ok) {
+                showToast('Login successful! Redirecting...', 'success');
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                setTimeout(() => {
                     window.location.href = 'index.html';
-                } else {
-                    document.getElementById('login-message').style.color = 'red';
-                    document.getElementById('login-message').innerText = data.message;
-                }
-            } catch (error) {
-                document.getElementById('login-message').innerText = 'Error connecting to server';
+                }, 1000);
+            } else {
+                showToast(data.message, 'error');
             }
+        } catch (error) {
+            showToast('Error connecting to server', 'error');
         }
+    }
 
-        if (localStorage.getItem('token')) {
-            window.location.href = 'index.html';
-        }
-    </script>
+    if (localStorage.getItem('token')) {
+        window.location.href = 'index.html';
+    }
+</script>
+
 </body>
 </html>

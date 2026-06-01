@@ -33,92 +33,102 @@
     </footer>
 
     <script>
-        const API_URL = 'http://localhost:5000/api';
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-            window.location.href = 'login.html';
-        }
+    const API_URL = 'http://localhost:5000/api';
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        window.location.href = 'login.html';
+    }
 
-        async function loadOrders() {
-    try {
-        const response = await fetch(`${API_URL}/orders`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const orders = await response.json();
-        
-        const container = document.getElementById('orders-container');
-        
-        if (orders.length === 0) {
-            container.innerHTML = '<p>No orders yet. <a href="index.html">Start Shopping</a></p>';
-            return;
-        }
-        
-        container.innerHTML = orders.map(order => {
-            // Calculate total if not present
-            let orderTotal = order.totalAmount;
-            if (!orderTotal || orderTotal === 0) {
-                orderTotal = order.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        const icon = type === 'success' ? '✓' : '✗';
+        toast.innerHTML = `${icon} ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function loadOrders() {
+        try {
+            const response = await fetch(`${API_URL}/orders`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const orders = await response.json();
+            
+            const container = document.getElementById('orders-container');
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<p>No orders yet. <a href="index.html">Start Shopping</a></p>';
+                return;
             }
             
-            return `
-                <div class="order-card">
-                    <div class="order-header">
-                        <strong>Order #${order._id.slice(-8)}</strong>
-                        <span class="order-status status-${order.status?.toLowerCase()}">${order.status || 'Pending'}</span>
-                    </div>
-                    <div>
-                        ${order.items?.map(item => `
-                            <div style="display:flex; justify-content:space-between; padding:0.5rem 0;">
-                                <span>${item.name} x ${item.quantity}</span>
-                                <span>$${(item.price * item.quantity).toFixed(2)}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div style="margin-top:1rem; padding-top:0.5rem; border-top:1px solid #ddd;">
-                        <strong>Total: $${orderTotal.toFixed(2)}</strong>
-                    </div>
-                    <div style="margin-top:0.5rem; font-size:0.9rem; color:#666;">
-                        Delivered to: ${order.shippingAddress?.street}, ${order.shippingAddress?.city}
-                    </div>
-                    ${order.status === 'Pending' ? `
-                        <button class="btn" onclick="cancelOrder('${order._id}')" style="margin-top:1rem; background:#dc3545;">Cancel Order</button>
-                    ` : ''}
-                </div>
-            `;
-        }).join('');
-    } catch (error) {
-        console.error('Error:', error);
-        container.innerHTML = '<p>Error loading orders</p>';
-    }
-}
-        
-        async function cancelOrder(orderId) {
-            if (confirm('Are you sure you want to cancel this order?')) {
-                try {
-                    const response = await fetch(`${API_URL}/orders/${orderId}/cancel`, {
-                        method: 'PUT',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    
-                    if (response.ok) {
-                        alert('Order cancelled');
-                        loadOrders();
-                    } else {
-                        alert('Failed to cancel order');
-                    }
-                } catch (error) {
-                    alert('Error cancelling order');
+            container.innerHTML = orders.map(order => {
+                // Calculate total if not present
+                let orderTotal = order.totalAmount;
+                if (!orderTotal || orderTotal === 0) {
+                    orderTotal = order.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
                 }
+                
+                return `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <strong>Order #${order._id.slice(-8)}</strong>
+                            <span class="order-status status-${order.status?.toLowerCase()}">${order.status || 'Pending'}</span>
+                        </div>
+                        <div>
+                            ${order.items?.map(item => `
+                                <div style="display:flex; justify-content:space-between; padding:0.5rem 0;">
+                                    <span>${item.name} x ${item.quantity}</span>
+                                    <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div style="margin-top:1rem; padding-top:0.5rem; border-top:1px solid #ddd;">
+                            <strong>Total: $${orderTotal.toFixed(2)}</strong>
+                        </div>
+                        <div style="margin-top:0.5rem; font-size:0.9rem; color:#666;">
+                            Delivered to: ${order.shippingAddress?.street}, ${order.shippingAddress?.city}
+                        </div>
+                        ${order.status === 'Pending' ? `
+                            <button class="btn" onclick="cancelOrder('${order._id}')" style="margin-top:1rem; background:#dc3545;">Cancel Order</button>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Error:', error);
+            container.innerHTML = '<p>Error loading orders</p>';
+        }
+    }
+    
+    async function cancelOrder(orderId) {
+        try {
+            const response = await fetch(`${API_URL}/orders/${orderId}/cancel`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                showToast('Order cancelled successfully', 'success');
+                loadOrders();
+            } else {
+                showToast('Failed to cancel order', 'error');
             }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error cancelling order', 'error');
         }
+    }
 
-        function logout() {
-            localStorage.removeItem('token');
-            window.location.href = 'login.html';
-        }
+    function logout() {
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    }
 
-        loadOrders();
-    </script>
+    loadOrders();
+</script>
+
 </body>
 </html>

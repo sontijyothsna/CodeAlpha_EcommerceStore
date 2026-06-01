@@ -161,6 +161,15 @@
         const API_URL = 'http://localhost:5000/api';
         const token = localStorage.getItem('token');
         
+        function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    const icon = type === 'success' ? '✓' : '✗';
+    toast.innerHTML = `${icon} ${message}`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
         if (!token) {
             window.location.href = 'login.html';
         }
@@ -298,26 +307,27 @@
         }
 
         async function addToCartById(productId, quantity = 1) {
-            try {
-                const response = await fetch(`${API_URL}/cart`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ productId, quantity })
-                });
-                
-                if (response.ok) {
-                    alert('Added to cart!');
-                    loadCartCount();
-                } else {
-                    alert('Failed to add to cart');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-            }
+    try {
+        const response = await fetch(`${API_URL}/cart`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ productId, quantity })
+        });
+        
+        if (response.ok) {
+            showToast('Added to cart!', 'success');
+            loadCartCount();
+        } else {
+            showToast('Failed to add to cart', 'error');
         }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error adding to cart', 'error');
+    }
+}
 
         function buyNow() {
             const quantity = parseInt(document.getElementById('quantity').value);
