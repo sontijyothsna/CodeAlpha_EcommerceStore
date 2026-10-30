@@ -1,6 +1,4 @@
-# CodeAlpha Internship Tasks
-
-## ✅ Task 1: E-commerce Store
+E-commerce Store
 Full-stack e-commerce store with authentication, cart, and orders.
 **Tech:** Node.js, Express, MongoDB, HTML, CSS, JS
 📂 [View Code](./task1-ecommerce-store)
